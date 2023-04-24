@@ -19,3 +19,12 @@
 
 # Go workspace file
 go.work
+
+# ENV files
+*.env
+
+# Directory
+/restApiTest
+
+# Workspace
+*.code-workspace
