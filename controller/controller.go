@@ -90,7 +90,7 @@ func Get_fares(c *gin.Context) {
 	data := util.Build_skyscanner_data(list_of_flights)
 	for i := 0; i < len(list_of_flights); i++ {
 		jsonBytes, err := json.Marshal(data[i])
-		/* mock data
+		/*mock data
 		SS := util.SkyscannerData{
 			Query: struct {
 				Market    string "json:\"market\""
@@ -138,8 +138,8 @@ func Get_fares(c *gin.Context) {
 		slice[0].OriginPlaceID.Iata = "JFK"
 		slice[0].DestinationPlaceID.Iata = "LIM"
 		slice[0].Date.Year = 2023
-		slice[0].Date.Month = 4
-		slice[0].Date.Day = 30
+		slice[0].Date.Month = 5
+		slice[0].Date.Day = 4
 		SS.Query.QueryLegs = append(SS.Query.QueryLegs, slice...)
 		SS.Query.CabinClass = "CABIN_CLASS_ECONOMY"
 		SS.Query.Adults = 1
@@ -161,6 +161,7 @@ func Get_fares(c *gin.Context) {
 
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 		if err != nil {
+			log.Println("unable to create request")
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -172,6 +173,7 @@ func Get_fares(c *gin.Context) {
 
 		res, err := client.Do(req)
 		if err != nil {
+			log.Println("unable to send request")
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -179,24 +181,32 @@ func Get_fares(c *gin.Context) {
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
+			log.Println("unable to read response body")
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
 		if err := json.Unmarshal(body, &price_data); err != nil {
+			log.Println("unable to unmarshal json")
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := json.Unmarshal(body, &price_data); err != nil {
+			log.Println("unable to unmarshal json")
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
 		json, err := gabs.ParseJSON(body)
 		if err != nil {
+			log.Println("unable to parse json")
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
-
 		sorting_options := []string{"best", "cheapest", "fastest"}
 		for _, option := range sorting_options {
-			booking := util.GetBookinglink(json, option, *price_data)
+			booking, price := util.GetBookinglink_And_Price(json, option, *price_data)
 			if booking == "" {
 				fmt.Println("no flights")
 				continue
@@ -205,13 +215,16 @@ func Get_fares(c *gin.Context) {
 			switch option {
 			case "best":
 				list_of_flights[i].Best_Flight = booking
+				list_of_flights[i].Best_Flight_Price = price
 			case "cheapest":
 				list_of_flights[i].Cheapest_Flight = booking
+				list_of_flights[i].Cheapest_Flight_Price = price
 			case "fastest":
 				list_of_flights[i].Fastest_Flight = booking
+				list_of_flights[i].Fastest_Flight_Price = price
 			}
 			fmt.Println("flight found")
-			fmt.Println(booking)
+			//fmt.Println(booking)
 		}
 		c.String(http.StatusOK, "%+v\n", list_of_flights)
 	}

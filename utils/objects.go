@@ -82,14 +82,17 @@ type FlightAwareFlight struct {
 }
 
 type AirlineData struct {
-	Departure_time      string
-	Carrier_iata        string
-	Flight_Number       string
-	Source_Airport      string
-	Destination_Airport string
-	Best_Flight         string
-	Cheapest_Flight     string
-	Fastest_Flight      string
+	Departure_time        string
+	Carrier_iata          string
+	Flight_Number         string
+	Source_Airport        string
+	Destination_Airport   string
+	Best_Flight           string
+	Best_Flight_Price     string
+	Cheapest_Flight       string
+	Cheapest_Flight_Price string
+	Fastest_Flight        string
+	Fastest_Flight_Price  string
 }
 
 type SkyscannerData struct {

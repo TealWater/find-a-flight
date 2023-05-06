@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/Jeffail/gabs"
 )
@@ -99,7 +101,7 @@ func calibrate_date_to_local_time(utc_time []string, year_and_month_old []string
 	return nil, nil
 }
 
-func GetBookinglink(json *gabs.Container, sorting_option string, price_data SkyscannerResults) string {
+func GetBookinglink_And_Price(json *gabs.Container, sorting_option string, price_data SkyscannerResults) (string, string) {
 	defer safeExit("the itinerary does not exist")
 
 	var itineraryId string
@@ -125,11 +127,82 @@ func GetBookinglink(json *gabs.Container, sorting_option string, price_data Skys
 	}
 
 	items := pricing_options.Search("items").Search("deepLink")
-	return items.String()
+	price := pricing_options.Search("price").Search("amount")
+	price_string := formatCurrency(price.String())
+	fmt.Println("the price is: " + price_string)
+	return items.String(), price_string
 }
 
 func safeExit(s string) {
 	if r := recover(); r != nil {
 		log.Println(s)
+	}
+}
+
+func formatCurrency(data string) string {
+	fmt.Println("//////////////////")
+	fmt.Println(data)
+	fmt.Println("//////////////////")
+	result := ""
+	for _, r := range data {
+		if unicode.IsDigit(r) {
+			result += string(r)
+		}
+	}
+	data = result
+	slice := []string{}
+	data_len := len(data) - 1
+	fmt.Println("*************")
+	fmt.Println(data)
+	fmt.Println("*************")
+
+	for i := 0; i < data_len; i += 1 {
+		if i == len(data)-3 {
+			slice = append(slice, ".")
+		}
+
+		slice = append(slice, string(data[i]))
+	}
+
+	data = strings.Join(slice, "")
+	fmt.Print("after: ")
+	fmt.Println(data)
+	return addCommas(data)
+}
+
+func addCommas(data string) string {
+	if len(data) <= 6 {
+		return data
+	}
+	parsed := strings.Split(data, ".")
+	data = parsed[0]
+
+	end := len(data) - 1
+
+	slice := []string{}
+	for count := 1; end > -1; end, count = end-1, count+1 {
+
+		if count == 4 {
+			slice = append(slice, ",")
+			count = 1
+
+		}
+
+		slice = append(slice, string(data[end]))
+
+	}
+
+	swap(&slice)
+	slice = append(slice, ".", parsed[1])
+	fmt.Println(slice)
+	return strings.Join(slice, "")
+
+}
+
+func swap(data *[]string) {
+	start := 0
+	end := len(*data) - 1
+	for ; start < end; start, end = start+1, end-1 {
+		(*data)[start], (*data)[end] = (*data)[end], (*data)[start]
 	}
 }
