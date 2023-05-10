@@ -3,13 +3,13 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
 	util "find-a-flight/utils"
+	iata_codes "find-a-flight/utils/json_files"
 
 	"github.com/Jeffail/gabs"
 	"github.com/gin-gonic/gin"
@@ -36,7 +36,6 @@ func Get_flights(c *gin.Context) {
 	start := "start=" + time_start
 	end := "end=" + time_end
 	url += "&" + start + "&" + end
-	log.Println(url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -78,82 +77,16 @@ func Get_flights(c *gin.Context) {
 			Destination_Airport: v.Destination.CodeIata,
 		})
 	}
-
-	for _, v := range list_of_flights {
-		c.String(http.StatusOK, v.Flight_Number+"\n")
-	}
-	c.String(http.StatusOK, "done!")
 }
 
 func Get_fares(c *gin.Context) {
-
 	data := util.Build_skyscanner_data(list_of_flights)
 	for i := 0; i < len(list_of_flights); i++ {
 		jsonBytes, err := json.Marshal(data[i])
-		/*mock data
-		SS := util.SkyscannerData{
-			Query: struct {
-				Market    string "json:\"market\""
-				Locale    string "json:\"locale\""
-				Currency  string "json:\"currency\""
-				QueryLegs []struct {
-					OriginPlaceID struct {
-						Iata string "json:\"iata\""
-					} "json:\"originPlaceId\""
-					DestinationPlaceID struct {
-						Iata string "json:\"iata\""
-					} "json:\"destinationPlaceId\""
-					Date struct {
-						Year  int "json:\"year\""
-						Month int "json:\"month\""
-						Day   int "json:\"day\""
-					} "json:\"date\""
-				} "json:\"queryLegs\""
-				CabinClass          string   "json:\"cabinClass\""
-				Adults              int      "json:\"adults\""
-				IncludedCarriersIds []string "json:\"includedCarriersIds\""
-			}{},
-		}
-
-		SS.Query.Market = "US"
-		SS.Query.Locale = "en-US"
-		SS.Query.Currency = "USD"
-		slice := SS.Query.QueryLegs
-		slice = append(slice, struct {
-			OriginPlaceID struct {
-				Iata string "json:\"iata\""
-				//EntityID string "json:\"entityId\""
-			} "json:\"originPlaceId\""
-			DestinationPlaceID struct {
-				Iata string "json:\"iata\""
-				//EntityID string "json:\"entityId\""
-			} "json:\"destinationPlaceId\""
-			Date struct {
-				Year  int "json:\"year\""
-				Month int "json:\"month\""
-				Day   int "json:\"day\""
-			} "json:\"date\""
-		}{})
-
-		slice[0].OriginPlaceID.Iata = "JFK"
-		slice[0].DestinationPlaceID.Iata = "LIM"
-		slice[0].Date.Year = 2023
-		slice[0].Date.Month = 5
-		slice[0].Date.Day = 4
-		SS.Query.QueryLegs = append(SS.Query.QueryLegs, slice...)
-		SS.Query.CabinClass = "CABIN_CLASS_ECONOMY"
-		SS.Query.Adults = 1
-		SS.Query.IncludedCarriersIds = append(SS.Query.IncludedCarriersIds, "LA")
-
-		jsonBytes, err := json.Marshal(SS)
-		*/
-		log.Println("111")
-
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			log.Println("sorry")
 		}
-		log.Println("222")
 
 		client := &http.Client{}
 		url := "https://partners.api.skyscanner.net/apiservices/v3/flights/live/search/create"
@@ -192,24 +125,27 @@ func Get_fares(c *gin.Context) {
 			return
 		}
 
-		if err := json.Unmarshal(body, &price_data); err != nil {
-			log.Println("unable to unmarshal json")
-			c.AbortWithError(http.StatusInternalServerError, err)
-			return
-		}
-
-		json, err := gabs.ParseJSON(body)
+		json_data, err := gabs.ParseJSON(body)
 		if err != nil {
 			log.Println("unable to parse json")
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
+
+		iata_codes.ValidateAirlineName(&list_of_flights[i])
+		iata_codes.ValidateAirportName(&list_of_flights[i])
+
 		sorting_options := []string{"best", "cheapest", "fastest"}
 		for _, option := range sorting_options {
-			booking, price := util.GetBookinglink_And_Price(json, option, *price_data)
+			booking, price := util.GetBookinglink_And_Price(json_data, option, *price_data)
 			if booking == "" {
-				fmt.Println("no flights")
-				continue
+				log.Println("no flights")
+
+				//Remove flight data from slice in-place
+				list_of_flights = append(list_of_flights[:i], list_of_flights[i+1:]...)
+				data = append(data[:i], data[i+1:]...)
+				i--
+				break
 			}
 
 			switch option {
@@ -223,9 +159,18 @@ func Get_fares(c *gin.Context) {
 				list_of_flights[i].Fastest_Flight = booking
 				list_of_flights[i].Fastest_Flight_Price = price
 			}
-			fmt.Println("flight found")
-			//fmt.Println(booking)
+			log.Println("flight found")
 		}
-		c.String(http.StatusOK, "%+v\n", list_of_flights)
 	}
+	c.JSON(http.StatusOK, list_of_flights)
+}
+
+func Populate(c *gin.Context) {
+	enableCors(c)
+	Get_flights(c)
+	defer Get_fares(c)
+}
+
+func enableCors(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
 }

@@ -19,8 +19,12 @@ func main() {
 		})
 	})
 
+	router.NoRoute(func(ctx *gin.Context) {
+		ctx.File("./frontend/src/routes/+page.svelte")
+	})
+
 	router.GET("/getFlights", control.Get_flights)
 	router.GET("/getFares", control.Get_fares)
-
+	router.GET("/getData", control.Populate)
 	router.Run(":8080")
 }

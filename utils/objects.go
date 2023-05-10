@@ -87,6 +87,8 @@ type AirlineData struct {
 	Flight_Number         string
 	Source_Airport        string
 	Destination_Airport   string
+	Destination_Country   string
+	Destination_City      string
 	Best_Flight           string
 	Best_Flight_Price     string
 	Cheapest_Flight       string

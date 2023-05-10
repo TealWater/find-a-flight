@@ -52,7 +52,7 @@ func Build_skyscanner_data(data []AirlineData) (query []SkyscannerData) {
 		year_and_month := strings.Split(data[k].Departure_time, "-")
 		day := strings.Split(year_and_month[2], " ")
 
-		//propery calibrate the year month day for EST (-4 UTC)
+		//properly calibrate the year month day for EST (-4 UTC)
 		if new_year, new_day := calibrate_date_to_local_time(day, year_and_month, day, 0); new_year != nil && new_day != nil {
 			year_and_month = new_year
 			day = new_day
@@ -82,10 +82,10 @@ func Build_skyscanner_data(data []AirlineData) (query []SkyscannerData) {
 }
 
 func calibrate_date_to_local_time(utc_time []string, year_and_month_old []string, day_old []string, hour_offset int) (year_and_month []string, day []string) {
-	//propery calibrate the year month day for EST
+	//properly calibrate the year month day for EST
 	utc_Time_parsed := strings.Split(utc_time[1], ":")
 	hour, _ := strconv.Atoi(utc_Time_parsed[0])
-	if hour-hour_offset < 0 {
+	if (hour - hour_offset) < 0 {
 		layout := "2006-01-02"
 		cur_day, err := time.Parse(layout, year_and_month_old[0]+"-"+year_and_month_old[1]+"-"+day_old[0])
 		if err != nil {
@@ -102,7 +102,7 @@ func calibrate_date_to_local_time(utc_time []string, year_and_month_old []string
 }
 
 func GetBookinglink_And_Price(json *gabs.Container, sorting_option string, price_data SkyscannerResults) (string, string) {
-	defer safeExit("the itinerary does not exist")
+	defer SafeExit("the itinerary does not exist")
 
 	var itineraryId string
 	switch sorting_option {
@@ -129,11 +129,13 @@ func GetBookinglink_And_Price(json *gabs.Container, sorting_option string, price
 	items := pricing_options.Search("items").Search("deepLink")
 	price := pricing_options.Search("price").Search("amount")
 	price_string := formatCurrency(price.String())
+	link := items.String()
+	formatLink(&link)
 	fmt.Println("the price is: " + price_string)
-	return items.String(), price_string
+	return link, price_string
 }
 
-func safeExit(s string) {
+func SafeExit(s string) {
 	if r := recover(); r != nil {
 		log.Println(s)
 	}
@@ -205,4 +207,11 @@ func swap(data *[]string) {
 	for ; start < end; start, end = start+1, end-1 {
 		(*data)[start], (*data)[end] = (*data)[end], (*data)[start]
 	}
+}
+
+func formatLink(input *string) {
+	runes := []rune(*input)
+	end := len(runes)
+	runes = append(runes[2:], runes[:end-2]...)
+	*input = string(runes)
 }
