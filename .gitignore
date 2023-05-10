@@ -28,3 +28,9 @@ go.work
 
 # Workspace
 *.code-workspace
+
+# VS Code
+*.vscode/
+
+# DS Store 
+.DS_Store
