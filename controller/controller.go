@@ -172,5 +172,5 @@ func Populate(c *gin.Context) {
 }
 
 func enableCors(c *gin.Context) {
-	c.Header("Access-Control-Allow-Origin", "http://localhost:5173")
+	c.Header("Access-Control-Allow-Origin", os.Getenv("TRUSTED_URL"))
 }
