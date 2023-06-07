@@ -13,26 +13,31 @@ var airport_codes = make(map[string]interface{})
 var json_data = &gabs.Container{}
 
 func init() {
-	loadAirports()
-	log.Println("Airports loaded!")
+	if err := loadAirports(); err == nil {
+		log.Println("Airports loaded!")
+	}
 }
 
-func loadAirports() {
+func loadAirports() error {
 	defer util.SafeExit("Unable to load airport names")
-	data, err := os.ReadFile("./find-a-flight/utils/json_files/airports.json")
+	data, err := os.ReadFile("utils/json_files/airports.json")
 	if err != nil {
 		log.Panicln("Error reading file:", err)
+		return err
 	}
 
 	err = json.Unmarshal(data, &airport_codes)
 	if err != nil {
 		log.Panic("Error parsing JSON: \n", err)
+		return err
 	}
 
 	json_data, err = gabs.ParseJSON(data)
 	if err != nil {
 		log.Panic("unable to parse json. \n", err)
+		return err
 	}
+	return nil
 }
 
 func ValidateAirportName(flight *util.AirlineData) {

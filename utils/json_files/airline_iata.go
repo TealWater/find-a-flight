@@ -21,42 +21,45 @@ var airline_codes = &airline_iata{}
 var Airline_map = make(map[string]string)
 
 func init() {
-	loadAirlines(&gin.Context{}, Airline_map)
-	log.Println("Airlines loaded!")
+	if err := loadAirlines(&gin.Context{}, Airline_map); err == nil {
+		log.Println("Airlines loaded!")
+	}
 }
 
-func loadAirlines(c *gin.Context, airline_map map[string]string) {
+func loadAirlines(c *gin.Context, airline_map map[string]string) error {
 	client := &http.Client{}
 	url := "https://cdn.jsdelivr.net/gh/besrourms/airlines@latest/airlines.json"
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return err
 	}
 
 	res, err := client.Do(req)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return err
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
-		return
+		return err
 	}
 
 	err = json.Unmarshal(body, &airline_codes)
 	if err != nil {
 		defer util.SafeExit("cdn for Commerical Airline codes are down \r\n Airline iata codes will be on display instead.")
 		log.Panic(err)
+		return err
 	}
 
 	for _, v := range *airline_codes {
 		airline_map[v.Code] = v.Name
 	}
+	return nil
 }
 
 func ValidateAirlineName(flight *util.AirlineData) {
