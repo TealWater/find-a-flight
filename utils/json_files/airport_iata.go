@@ -19,9 +19,8 @@ func init() {
 
 func loadAirports() {
 	defer util.SafeExit("Unable to load airport names")
-	data, err := os.ReadFile("/Users/matthewstraughn/Code/find-a-flight/utils/json_files/airports.json")
+	data, err := os.ReadFile("./find-a-flight/utils/json_files/airports.json")
 	if err != nil {
-		log.Println("Here am")
 		log.Panicln("Error reading file:", err)
 	}
 
