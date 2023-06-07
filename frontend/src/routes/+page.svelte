@@ -2,7 +2,7 @@
 	import FlightCard from './flight_card.svelte';
 	var flights;
 	const fetchData = async () => {
-		const res = await fetch('http://localhost:8080/getData');
+		const res = await fetch('https://find-a-flight-backend.onrender.com/getData');
 		const data = await res.json();
 		console.log(data);
 		return data;
