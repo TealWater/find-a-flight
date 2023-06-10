@@ -132,6 +132,16 @@ func Get_fares(c *gin.Context) {
 			return
 		}
 
+		/*
+			When the webpage is refreshed while the server is processing it starts the from the beginning
+			of the 'populate()' func --> claering the 'list_of_flights' slice, this causes an out of
+			bounds error.
+
+			return --> to exit function gracefully
+		*/
+		if i >= len(list_of_flights) {
+			return
+		}
 		iata_codes.ValidateAirlineName(&list_of_flights[i])
 		iata_codes.ValidateAirportName(&list_of_flights[i])
 
