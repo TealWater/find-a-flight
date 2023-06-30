@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 
 	util "find-a-flight/utils"
 	iata_codes "find-a-flight/utils/json_files"
@@ -23,12 +24,16 @@ func init() {
 	}
 }
 
+var wg sync.WaitGroup
+var mu sync.Mutex
 var list_of_flights []util.AirlineData
 var price_data = &util.SkyscannerResults{}
 
 func Get_flights(c *gin.Context) {
+	defer wg.Done()
 	client := &http.Client{}
 	flights := &util.FlightAwareFlight{}
+	mu.Lock()
 	list_of_flights = make([]util.AirlineData, 0)
 
 	url := "https://aeroapi.flightaware.com/aeroapi/airports/KJFK/flights/scheduled_departures?type=Airline"
@@ -77,9 +82,13 @@ func Get_flights(c *gin.Context) {
 			Destination_Airport: v.Destination.CodeIata,
 		})
 	}
+	log.Println(len(list_of_flights))
+	mu.Unlock()
 }
 
 func Get_fares(c *gin.Context) {
+	mu.Lock()
+	log.Println(len(list_of_flights))
 	data := util.Build_skyscanner_data(list_of_flights)
 	for i := 0; i < len(list_of_flights); i++ {
 		jsonBytes, err := json.Marshal(data[i])
@@ -132,16 +141,6 @@ func Get_fares(c *gin.Context) {
 			return
 		}
 
-		/*
-			When the webpage is refreshed while the server is processing it starts the from the beginning
-			of the 'populate()' func --> claering the 'list_of_flights' slice, this causes an out of
-			bounds error.
-
-			return --> to exit function gracefully
-		*/
-		if i >= len(list_of_flights) {
-			return
-		}
 		iata_codes.ValidateAirlineName(&list_of_flights[i])
 		iata_codes.ValidateAirportName(&list_of_flights[i])
 
@@ -149,8 +148,6 @@ func Get_fares(c *gin.Context) {
 		for _, option := range sorting_options {
 			booking, price := util.GetBookinglink_And_Price(json_data, option, *price_data)
 			if booking == "" {
-				log.Println("no flights")
-
 				//Remove flight data from slice in-place
 				list_of_flights = append(list_of_flights[:i], list_of_flights[i+1:]...)
 				data = append(data[:i], data[i+1:]...)
@@ -173,12 +170,16 @@ func Get_fares(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, list_of_flights)
+	mu.Unlock()
 }
 
 func Populate(c *gin.Context) {
 	enableCors(c)
+	wg.Add(1)
 	Get_flights(c)
-	defer Get_fares(c)
+	wg.Wait()
+	Get_fares(c)
+
 }
 
 func enableCors(c *gin.Context) {
