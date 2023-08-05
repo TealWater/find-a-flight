@@ -87,6 +87,7 @@ func Get_flights(c *gin.Context) {
 }
 
 func Get_fares(c *gin.Context) {
+	defer wg.Done()
 	mu.Lock()
 	log.Println(len(list_of_flights))
 	data := util.Build_skyscanner_data(list_of_flights)
@@ -175,10 +176,10 @@ func Get_fares(c *gin.Context) {
 
 func Populate(c *gin.Context) {
 	enableCors(c)
-	wg.Add(1)
-	Get_flights(c)
+	wg.Add(2)
+	go Get_fares(c)
+	go Get_flights(c)
 	wg.Wait()
-	Get_fares(c)
 
 }
 
