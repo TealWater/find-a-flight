@@ -10,7 +10,7 @@ import (
 func main() {
 	router := gin.Default()
 
-	router.GET("/hello", func(c *gin.Context) {
+	router.GET("/time", func(c *gin.Context) {
 		start, end := util.Convert_to_iso(1)
 		c.JSON(200, gin.H{
 			"message":      "Hello World",
@@ -26,5 +26,6 @@ func main() {
 	router.GET("/getFlights", control.Get_flights)
 	router.GET("/getFares", control.Get_fares)
 	router.GET("/getData", control.Populate)
+	router.GET("/search", control.Search)
 	router.Run(":8080")
 }

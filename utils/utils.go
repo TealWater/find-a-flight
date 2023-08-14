@@ -116,13 +116,15 @@ func GetBookinglink_And_Price(json *gabs.Container, sorting_option string, price
 
 	mp, err := json.Search("content", "results", "itineraries", itineraryId).ChildrenMap()
 	if err != nil {
-		log.Println("I want a spaceship")
+		log.Println("Issue in File: utils.go --> GetBookingLink() --> line 117")
+		log.Println("Itinerary ID not available")
 		panic(err)
 	}
 
 	pricing_options, err := mp["pricingOptions"].ArrayElement(0)
 	if err != nil {
-		log.Println("you broke me inside another loop! why!!!!")
+		log.Println("Issue in File: utils.go --> GetBookingLink() --> line 123")
+		log.Println("Flight Pricing not available")
 		panic(err)
 	}
 
