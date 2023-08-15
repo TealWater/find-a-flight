@@ -28,6 +28,7 @@ var wg sync.WaitGroup
 var mu sync.Mutex
 var list_of_flights []util.AirlineData
 var price_data = &util.SkyscannerResults{}
+var airport string
 
 func Get_flights(c *gin.Context) {
 	defer wg.Done()
@@ -36,7 +37,7 @@ func Get_flights(c *gin.Context) {
 	mu.Lock()
 	list_of_flights = make([]util.AirlineData, 0)
 
-	url := "https://aeroapi.flightaware.com/aeroapi/airports/KJFK/flights/scheduled_departures?type=Airline"
+	url := "https://aeroapi.flightaware.com/aeroapi/airports/" + airport + "/flights/scheduled_departures?type=Airline"
 	time_start, time_end := util.Convert_to_iso(1)
 	start := "start=" + time_start
 	end := "end=" + time_end
@@ -172,6 +173,12 @@ func Get_fares(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, list_of_flights)
 	mu.Unlock()
+}
+
+func Search(c *gin.Context) {
+	airport = c.DefaultQuery("airport", "KJFK")
+	log.Println(airport)
+	Populate(c)
 }
 
 func Populate(c *gin.Context) {

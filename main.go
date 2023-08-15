@@ -21,5 +21,6 @@ func main() {
 	router.GET("/getFlights", control.Get_flights)
 	router.GET("/getFares", control.Get_fares)
 	router.GET("/getData", control.Populate)
+	router.GET("/search", control.Search)
 	router.Run(os.Getenv("GO_PORT"))
 }
