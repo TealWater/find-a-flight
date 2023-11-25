@@ -183,11 +183,12 @@ func Search(c *gin.Context) {
 
 func Populate(c *gin.Context) {
 	enableCors(c)
-	wg.Add(2)
-	go Get_fares(c)
+	wg.Add(1)
 	go Get_flights(c)
 	wg.Wait()
-
+	wg.Add(1)
+	go Get_fares(c)
+	wg.Wait()
 }
 
 func enableCors(c *gin.Context) {
