@@ -1,6 +1,9 @@
 # find-a-flight
 Shows you flights departing within the next few hours at a specified airport along with airfares.
 
+**This app is hosted on www.render.com | The server instance is spun down due to inactivity. When you click
+on the link, it will take 2 mins for the frontend and backend to spin up.**
+
 Test the app out here: https://find-a-flight.onrender.com
 
 *Only shows flights from JFK airport departing within the next 2 hours.*
